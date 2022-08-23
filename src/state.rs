@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Formatter;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub(crate) enum GameState {
     Loser,
     Winner,
@@ -9,12 +9,14 @@ pub(crate) enum GameState {
     None
 }
 
+#[derive(Clone)]
 pub(crate) struct Player {
     pub(crate) name: String,
     pub(crate) state: GameState,
     pub(crate) hits: i32,
     pub(crate) wins: i32,
     pub(crate) loses: i32,
+    pub(crate) high_score: i32
 }
 
 impl Player {
@@ -31,23 +33,9 @@ impl Player {
     pub(crate) fn set_state(&mut self, state: GameState) {
         self.state = state;
     }
-}
 
-#[derive(PartialEq, Debug)]
-enum InvalidWordSearch {
-    NoMatchingCriteria,
-    InvalidStartingLetter(char),
-    InvalidWordLength(usize),
-}
-
-impl fmt::Display for InvalidWordSearch {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let description = match *self {
-            InvalidWordSearch::NoMatchingCriteria => "Neither of the given values match any of the words in the list",
-            InvalidWordSearch::InvalidStartingLetter(char) => "The given character '{char}' is not a letter of the alphabet",
-            InvalidWordSearch::InvalidWordLength(size) => "No word in the list is of length '{size}'",
-        };
-        f.write_str(description)
+    pub(crate) fn hit(&mut self) {
+        self.hits += 1;
     }
 }
 

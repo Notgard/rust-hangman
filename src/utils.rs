@@ -1,4 +1,6 @@
 mod state;
+
+use std::collections::HashMap;
 //use std::thread;
 //use std::time::Duration;
 #[allow(unused_imports)]
@@ -8,6 +10,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use state::InvalidWordSearch;
+use crate::Player;
 
 static ASCII_LOWER: [char; 26] = [
     'a', 'b', 'c', 'd', 'e',
@@ -18,32 +21,39 @@ static ASCII_LOWER: [char; 26] = [
     'z',
 ];
 
+pub(crate) static MAX_MISTAKES: i32 = 6;
+
 pub struct Hangman {
     pub(crate) sprite: String
 }
 
 impl Hangman {
     pub(crate) fn update(&mut self, life: usize) {
-        let body_parts = vec!["O", "|", "|", "\\", "/", "\\", "/"];
-        self.sprite = self.sprite.replacen("*", body_parts[life], 1);
+        let body_parts = vec!["O", "|", "\\", "/", "/", "\\"];
+        if life == 1 {
+            self.sprite = self.sprite.replace("@", body_parts[life]);
+        } else {
+            self.sprite = self.sprite.replacen("*", body_parts[life], 1);
+        }
+
     }
 
     pub(crate) fn reset(&mut self) {
         self.sprite = "
-             ___________
-            |	    |
-            |	    |
-            |	    *
-            |	   ***
-            |	    *
-            |	   * *
-            |
-            |
-     _______|_______".to_owned();
+           ___________
+          |	    |
+          |	    |
+          |	    *
+          |	   *@*
+          |	    @
+          |	   * *
+          |
+          |
+   _______|_______".to_owned();
     }
 
     pub(crate) fn print(&self) {
-        println!("{}", self.sprite.replace("*", " "))
+        println!("{}", self.sprite.replace("*", " ").replace("@", " "))
     }
 }
 
@@ -122,10 +132,21 @@ impl WordManager for String {
     }
 }
 
-fn as_char(string: &String) -> char {
+pub fn as_char(string: &String) -> char {
     string.chars().next().unwrap()
 }
 
-fn as_len(string: &String) -> usize {
+pub fn as_len(string: &str) -> usize {
     string.parse::<usize>().unwrap()
+}
+
+pub fn print_high_scores<'a>(players: HashMap<&'a String, &'a Player>) -> HashMap<&'a String, &'a Player> {
+    println!(
+        "{0: <10} | {1: <10} | {2: <10} | {3: <10}",
+        "Player", "Score", "Wins", "Losses"
+    );
+    for (key, value) in players.iter() {
+        println!("{0: <10} | {1: <10} | {2: <10} | {3: <10}", key, value.high_score, value.wins, value.loses);
+    }
+    players
 }
