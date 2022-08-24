@@ -1,14 +1,13 @@
 mod state;
 mod utils;
-#[allow(unused_imports)]
-use std::{env, fs};
-use std::borrow::Borrow;
+
+use std::fs;
 use std::collections::{HashMap, HashSet};
+#[allow(unused_imports)]
 use itertools::Itertools;
 use std::process::exit;
 use utils::{Hangman, WordManager, as_char, as_len};
-use state::{Player, GameState};
-use crate::utils::print_high_scores;
+use state::{Player, GameState, print_high_scores};
 
 fn main() {
 
@@ -30,8 +29,8 @@ fn main() {
 ____|____");
 
     let mut hangman = Hangman { sprite: String::new() };
-    println!("Please enter your name: ");
 
+    let mut reg_player: Player;
     let mut player: Player;
 
     let mut players: HashMap<String, Player> = HashMap::new();
@@ -41,15 +40,19 @@ ____|____");
     loop {
         hangman.reset();
 
+        println!("Please enter your name: ");
         let mut name = String::new();
         std::io::stdin()
             .read_line(&mut name)
             .expect("Failed to read input");
+
         let mut copy = String::new();
+        let mut copy2 = String::new();
         // Store active players in memory and change between players
         if !players.contains_key(&name) {
             copy = name.to_owned();
-            player = Player {
+            copy2 = name.to_owned();
+            reg_player = Player {
                 name: copy,
                 state: GameState::None,
                 hits: 0,
@@ -57,29 +60,19 @@ ____|____");
                 loses: 0,
                 high_score: 0
             };
-        } else if players.contains_key(&name) {
-            if let Some(&&p) = players.get(&name) {
-                player = p;
-            }
+            players.insert(
+                copy2,
+                reg_player
+            );
         }
-        let player_ = Player {
-            name: String::from(copy),
-            state: GameState::Loser,
-            hits: 0,
-            wins: 0,
-            loses: 0,
-            high_score: 0
-        };
-        players.insert(
-            String::new(),
-            player_
-        )
-        print!("Menu:\n\
+        //TODO: NED TO UPDATE PLAYER IN MAP AFTER GAME
+        player = players.get(&*name).cloned().unwrap();
+        println!("Menu:\n\
     1: Play Game\n\
     2: Guess Random Word\n\
     3: Guess Manual Word\n\
     4: Show high scores\n\
-    5: Quit\nYou Pick: ");
+    5: Quit");
 
         let mut option = String::new();
         std::io::stdin()
@@ -124,8 +117,8 @@ ____|____");
                 player.set_state(GameState::InGame);
             },
             "4" => {
-                players = print_high_scores(players);
-                break;
+                print_high_scores(&players);
+                continue;
             },
             "5" => {
                 exit(0)
@@ -175,24 +168,26 @@ ____|____");
 
 
             if player.hits == utils::MAX_MISTAKES {
-                player.state = GameState::Loser;
-                player.loses += 1;
-                player.high_score -= 100;
+                player.lose();
                 println!("So sorry. You struck out.");
+                println!("The word was {}", guess_word.to_uppercase());
             } else if !correct_guesses.contains(&"_") {
-                player.state = GameState::Winner;
-                player.wins += 1;
-                player.high_score += 500;
+                player.win();
                 println!("You win in {} guesses!!", guesses.iter().count())
             }
         }
-        let mut persist = String::new();
-        println!("Do you want to play again ? Y/N");
-        std::io::stdin().read_line(&mut persist).expect("Failed to read input");
-        match persist.to_uppercase().as_str() {
-            "Y" => continue,
-            "N" => break,
-            _ => {}
+        if player.state == GameState::Winner || player.state == GameState::Loser {
+            let mut persist = String::new();
+            println!("Do you want to play again ? Y/N");
+            std::io::stdin().read_line(&mut persist).expect("Failed to read input");
+            match persist.to_uppercase().as_str() {
+                "Y" => {
+                    println!("Press ENTER.");
+                    continue;
+                },
+                "N" => break,
+                _ => {}
+            }
         }
     }
 
